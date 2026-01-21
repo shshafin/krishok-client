@@ -31,39 +31,15 @@ function resolveUserId(user) {
   return user?.id ?? user?._id ?? user?.userId ?? user?.username ?? null;
 }
 
-// 🔥 ফিক্সড নরমালাইজার: এটি আইডি স্ট্রিং এবং অবজেক্ট দুইটাই হ্যান্ডেল করবে
+// 🔥 ফলো লিস্টের এরর ফিক্স করার জন্য নতুন ফাংশন
 function normalizeUserList(users) {
   if (!Array.isArray(users)) return [];
-  return users.map((u, index) => {
-    // যদি u সরাসরি একটা স্ট্রিং (আইডি) হয়
-    if (typeof u === "string") {
-      const id = u;
-      return {
-        id: id, // Modal এ 'id' দরকার, '_id' নয়
-        name: `ব্যবহারকারী (${id.slice(-4)})`,
-        username: id,
-        state: "অজানা এলাকা",
-        avatar: avatarFromSeed(id), // আইডি স্ট্রিং হলে সিড থেকে অ্যাভাটার
-      };
-    }
-
-    // প্রোফাইল ইমেজের পাথ ঠিক করা
-    const avatarPath = u.profileImage || u.avatar || null;
-    const fullAvatarUrl = avatarPath
-      ? avatarPath.startsWith("http")
-        ? avatarPath
-        : `${baseApi}${avatarPath}`
-      : avatarFromSeed(u.username || u.name || String(index));
-
-    // যদি u একটা অবজেক্ট হয়
-    return {
-      id: u._id || u.id || `temp-${index}`, // Modal 'id' প্রপ ব্যবহার করে
-      name: u.name || u.fullName || u.username || "অজানা ব্যবহারকারী",
-      state: u.state || "অজানা এলাকা",
-      username: u.username || "user",
-      avatar: fullAvatarUrl, // Modal 'avatar' প্রপ ব্যবহার করে
-    };
-  });
+  return users.users.map((u) => ({
+    _id: u._id || u.id || String(Math.random()),
+    name: u.name || u.fullName || u.username || "Unknown",
+    username: u.username || "user",
+    profileImage: u.profileImage || u.avatar || null,
+  }));
 }
 
 function normalizeLikedUser(raw, fallbackSeed) {
@@ -223,7 +199,7 @@ export default function ProfilePage() {
         );
         setPosts(normalizedPosts);
 
-        // 🔥 ফিক্স: নিজের প্রোফাইলে ডেটা স্ট্রিং হিসেবে আসলেও হ্যান্ডেল করবে
+        // 🔥 ফলোয়ার এবং ফলোয়িং লিস্টের এরর ফিক্স করার জন্য নরমালাইজ করা হচ্ছে
         setFollowers(normalizeUserList(meData.followers));
         setFollowing(normalizeUserList(meData.following));
 
@@ -389,6 +365,11 @@ export default function ProfilePage() {
   };
 
   const deleteSeedHandler = async (priceId) => {
+    console.log("Deleting seed ID:", priceId);
+    if (!priceId) {
+      toast.error("Invalid price ID");
+      return;
+    }
     try {
       await deleteSeedPrice(priceId);
       setMySeedPrices((prev) => prev.filter((s) => s._id !== priceId));

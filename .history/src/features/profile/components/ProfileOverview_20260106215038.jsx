@@ -22,14 +22,10 @@ function resolveAvatarUrl(profile) {
   if (!raw) {
     return `https://i.pravatar.cc/120?u=${profile?._id || profile?.id || profile?.username || profile?.name || "user"}`;
   }
-  if (
-    typeof raw === "string" &&
-    (raw.startsWith("http://") || raw.startsWith("https://"))
-  ) {
+  if (typeof raw === "string" && (raw.startsWith("http://") || raw.startsWith("https://"))) {
     return raw;
   }
-  const normalized =
-    typeof raw === "string" && raw.startsWith("/") ? raw : `/${raw}`;
+  const normalized = typeof raw === "string" && raw.startsWith("/") ? raw : `/${raw}`;
   return `${baseApi}${normalized}`;
 }
 
@@ -55,8 +51,8 @@ export default function ProfileOverview({
   const primaryButtonLabel = isOwner
     ? TEXT_EDIT_PROFILE
     : isFollowing
-      ? TEXT_FOLLOWING
-      : TEXT_FOLLOW;
+    ? TEXT_FOLLOWING
+    : TEXT_FOLLOW;
 
   console.log(profile);
 

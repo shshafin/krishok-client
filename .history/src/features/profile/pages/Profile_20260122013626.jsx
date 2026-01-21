@@ -31,41 +31,6 @@ function resolveUserId(user) {
   return user?.id ?? user?._id ?? user?.userId ?? user?.username ?? null;
 }
 
-// 🔥 ফিক্সড নরমালাইজার: এটি আইডি স্ট্রিং এবং অবজেক্ট দুইটাই হ্যান্ডেল করবে
-function normalizeUserList(users) {
-  if (!Array.isArray(users)) return [];
-  return users.map((u, index) => {
-    // যদি u সরাসরি একটা স্ট্রিং (আইডি) হয়
-    if (typeof u === "string") {
-      const id = u;
-      return {
-        id: id, // Modal এ 'id' দরকার, '_id' নয়
-        name: `ব্যবহারকারী (${id.slice(-4)})`,
-        username: id,
-        state: "অজানা এলাকা",
-        avatar: avatarFromSeed(id), // আইডি স্ট্রিং হলে সিড থেকে অ্যাভাটার
-      };
-    }
-
-    // প্রোফাইল ইমেজের পাথ ঠিক করা
-    const avatarPath = u.profileImage || u.avatar || null;
-    const fullAvatarUrl = avatarPath
-      ? avatarPath.startsWith("http")
-        ? avatarPath
-        : `${baseApi}${avatarPath}`
-      : avatarFromSeed(u.username || u.name || String(index));
-
-    // যদি u একটা অবজেক্ট হয়
-    return {
-      id: u._id || u.id || `temp-${index}`, // Modal 'id' প্রপ ব্যবহার করে
-      name: u.name || u.fullName || u.username || "অজানা ব্যবহারকারী",
-      state: u.state || "অজানা এলাকা",
-      username: u.username || "user",
-      avatar: fullAvatarUrl, // Modal 'avatar' প্রপ ব্যবহার করে
-    };
-  });
-}
-
 function normalizeLikedUser(raw, fallbackSeed) {
   if (!raw) return null;
   if (typeof raw === "string" || typeof raw === "number") {
@@ -106,6 +71,7 @@ export default function ProfilePage() {
   const [activePostMode, setActivePostMode] = useState("comments");
   const [activePostStartIndex, setActivePostStartIndex] = useState(0);
 
+  // 👇 এখানেই declare করো
   const composerRef = useRef(null);
 
   const closeActivePost = useCallback(() => {
@@ -126,21 +92,26 @@ export default function ProfilePage() {
     setActivePostId(postId);
   }, []);
 
+  // Load current user, posts, and seed prices
   useEffect(() => {
     const loadCurrentUserAndProfile = async () => {
       try {
         setLoading(true);
 
+        // ১️⃣ লগিন করা ইউজারের ডেটা
         const meResponse = await fetchMe();
         const meData = meResponse?.data ?? meResponse;
         setCurrentUser(meData);
 
+        // ২️⃣ profile owner userId
         let profileUserId = username ?? resolveUserId(meData);
         if (!profileUserId) throw new Error("Profile user not found");
 
+        // ৩profile userএর পোস্ট fetch
         const postsResponse = await fetchUserPosts(profileUserId);
         const fetchedPosts = postsResponse ?? [];
 
+        // ৪Normalize posts
         const normalizedPosts = (fetchedPosts.posts || []).map((post) => {
           const meId = resolveUserId(meData);
           const rawLikes = Array.isArray(post.likes) ? post.likes : [];
@@ -216,20 +187,21 @@ export default function ProfilePage() {
           };
         });
 
+        // Profile overview
         setProfile(
           meData?._id === profileUserId
             ? meData
             : { ...meData, _id: profileUserId },
         );
         setPosts(normalizedPosts);
+        setFollowers(meData.followers ?? []);
+        setFollowing(meData.following ?? []);
 
-        // 🔥 ফিক্স: নিজের প্রোফাইলে ডেটা স্ট্রিং হিসেবে আসলেও হ্যান্ডেল করবে
-        setFollowers(normalizeUserList(meData.followers));
-        setFollowing(normalizeUserList(meData.following));
-
+        // ৫️⃣ নিজের seed prices fetch
         if (profileUserId === resolveUserId(meData)) {
           try {
             const seedsResponse = await fetchMySeedPrices();
+            console.log("seed", seedsResponse);
             const prices = seedsResponse?.data ?? seedsResponse ?? [];
             setMySeedPrices(prices);
           } catch (err) {
@@ -290,6 +262,7 @@ export default function ProfilePage() {
     [posts?.length, followers.length, following.length],
   );
 
+  // Handlers
   const toggleLike = async (postId) => {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
@@ -349,7 +322,7 @@ export default function ProfilePage() {
             : p,
         ),
       );
-      toast.success("মন্তব্য যোগ হয়েছে");
+      toast.success("মন্তব্য যোগ হয়েছে");
     } catch (error) {
       console.error("Failed to add comment", error);
       toast.error("মন্তব্য যোগ করা যায়নি");
@@ -381,7 +354,7 @@ export default function ProfilePage() {
       await deletePost(postId);
       setPosts((prev) => prev.filter((post) => post.id !== postId));
       if (activePostId === postId) closeActivePost();
-      toast.success("পোস্ট মুছে ফেলা হয়েছে");
+      toast.success("পোস্ট মুছে ফেলা হয়েছে");
     } catch (error) {
       console.error("Failed to delete post", error);
       toast.error("পোস্ট মুছে ফেলা যায়নি");
@@ -389,6 +362,12 @@ export default function ProfilePage() {
   };
 
   const deleteSeedHandler = async (priceId) => {
+    console.log("Deleting seed ID:", priceId);
+    if (!priceId) {
+      toast.error("Invalid price ID");
+      return;
+    }
+
     try {
       await deleteSeedPrice(priceId);
       setMySeedPrices((prev) => prev.filter((s) => s._id !== priceId));
@@ -399,6 +378,7 @@ export default function ProfilePage() {
     }
   };
 
+  // ✅ Updated submitComposer with createPost API
   const [submitting, setSubmitting] = useState(false);
 
   const submitComposer = async (payload) => {
@@ -411,8 +391,10 @@ export default function ProfilePage() {
       payload.videos?.forEach((file) => formData.append("videos", file));
 
       const response = await createPost(formData);
+
       const postData = response?.data?.post || response?.post || response;
 
+      // UI update
       setPosts((prev) => [
         {
           ...postData,
@@ -523,7 +505,7 @@ export default function ProfilePage() {
                 setComposerMode("media");
                 setComposerOpen(true);
                 setTimeout(() => {
-                  composerRef.current?.triggerFileInput();
+                  composerRef.current?.triggerFileInput(); // auto open file picker
                 }, 100);
               }}
             />

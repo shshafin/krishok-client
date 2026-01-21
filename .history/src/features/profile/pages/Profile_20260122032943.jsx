@@ -35,33 +35,22 @@ function resolveUserId(user) {
 function normalizeUserList(users) {
   if (!Array.isArray(users)) return [];
   return users.map((u, index) => {
-    // যদি u সরাসরি একটা স্ট্রিং (আইডি) হয়
+    // যদি u সরাসরি একটা স্ট্রিং (আইডি) হয়
     if (typeof u === "string") {
-      const id = u;
       return {
-        id: id, // Modal এ 'id' দরকার, '_id' নয়
-        name: `ব্যবহারকারী (${id.slice(-4)})`,
-        username: id,
-        state: "অজানা এলাকা",
-        avatar: avatarFromSeed(id), // আইডি স্ট্রিং হলে সিড থেকে অ্যাভাটার
+        _id: u,
+        name: `ব্যবহারকারী (${u.slice(-4)})`, // আইডির শেষ ৪ অক্ষর দেখাবে যাতে চেনা যায়
+        state
+        username: u,
+        profileImage: null,
       };
     }
-
-    // প্রোফাইল ইমেজের পাথ ঠিক করা
-    const avatarPath = u.profileImage || u.avatar || null;
-    const fullAvatarUrl = avatarPath
-      ? avatarPath.startsWith("http")
-        ? avatarPath
-        : `${baseApi}${avatarPath}`
-      : avatarFromSeed(u.username || u.name || String(index));
-
-    // যদি u একটা অবজেক্ট হয়
+    // যদি u একটা অবজেক্ট হয়
     return {
-      id: u._id || u.id || `temp-${index}`, // Modal 'id' প্রপ ব্যবহার করে
+      _id: u._id || u.id || `temp-${index}`,
       name: u.name || u.fullName || u.username || "অজানা ব্যবহারকারী",
-      state: u.state || "অজানা এলাকা",
       username: u.username || "user",
-      avatar: fullAvatarUrl, // Modal 'avatar' প্রপ ব্যবহার করে
+      profileImage: u.profileImage || u.avatar || null,
     };
   });
 }
