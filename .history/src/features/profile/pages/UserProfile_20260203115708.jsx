@@ -166,14 +166,12 @@ export default function UserProfilePage() {
             ? likedUsers.some((u) => String(resolveUserId(u)) === String(meId))
             : false;
 
-          console.log("post===>", post);
-
           return {
             ...post,
             id: post._id,
             author: {
               id: post.user?._id || post.userId,
-              name: post.user?.name || post.user?.username || "Unknown",
+              name: post.user?.username || post.user?.name || "Unknown",
               state: post.user?.state || "Unknown",
               avatar: post.user?.profileImage
                 ? `${baseApi}${post.user.profileImage}`
@@ -361,9 +359,9 @@ export default function UserProfilePage() {
               viewerId ??
               `viewer-${fallbackSeed}`,
             name:
-              latest?.user?.name ??
               latest?.user?.username ??
-              currentUser?.name ??
+              latest?.user?.name ??
+              currentUser?.username ??
               "You",
             username:
               latest?.user?.username ?? currentUser?.username ?? fallbackSeed,

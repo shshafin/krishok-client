@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useEffect, useRef } from "react";
 
 // Global video controller - ensures only one video plays at a time

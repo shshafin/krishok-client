@@ -154,6 +154,8 @@ export default function UserProfilePage() {
           : false;
         setIsFollowing(isMeFollowing);
 
+        console.log("post===>", post);
+
         // ২️⃣ User posts fetch
         const postsResponse = await fetchUserPosts(userData._id);
         const fetchedPosts = postsResponse?.posts ?? [];
@@ -165,8 +167,6 @@ export default function UserProfilePage() {
           const liked = meId
             ? likedUsers.some((u) => String(resolveUserId(u)) === String(meId))
             : false;
-
-          console.log("post===>", post);
 
           return {
             ...post,

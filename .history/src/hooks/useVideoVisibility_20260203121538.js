@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useEffect, useRef } from "react";
 
 // Global video controller - ensures only one video plays at a time
@@ -78,32 +77,16 @@ class GlobalVideoController {
       return;
     }
 
-    // Pause current video and mute it if different
+    // Pause current video if different
     if (this.currentlyPlaying && this.currentlyPlaying !== videoToPlay) {
       this.currentlyPlaying.pause();
-      this.currentlyPlaying.muted = true; // Mute the video being paused
     }
 
-    // --- SOUND AUTOPLAY LOGIC START ---
+    // Play the selected video
     this.currentlyPlaying = videoToPlay;
-
-    // First, try to play with sound unmuted
-    videoToPlay.muted = false;
-
     videoToPlay.play().catch((err) => {
-      // If unmuted playback is blocked by browser (user hasn't interacted yet)
-      // fall back to muted autoplay as a safety measure
-      if (err.name === "NotAllowedError") {
-        console.debug("Autoplay with sound blocked, falling back to muted.");
-        videoToPlay.muted = true;
-        videoToPlay
-          .play()
-          .catch((e) => console.error("Play failed even muted:", e));
-      } else {
-        console.debug("Playback error:", err);
-      }
+      console.debug("Autoplay prevented:", err);
     });
-    // --- SOUND AUTOPLAY LOGIC END ---
   }
 
   setModalOpen(isOpen) {
@@ -113,7 +96,6 @@ class GlobalVideoController {
       this.videos.forEach((data, video) => {
         if (data.priority !== "modal" && !video.paused) {
           video.pause();
-          video.muted = true;
         }
       });
 
@@ -125,8 +107,10 @@ class GlobalVideoController {
         }
       }
 
+      // Update playback to play modal video if visible
       this.updatePlayback();
     } else {
+      // When modal closes, update playback for feed videos
       this.updatePlayback();
     }
   }
@@ -135,7 +119,6 @@ class GlobalVideoController {
     this.videos.forEach((data, video) => {
       if (!video.paused) {
         video.pause();
-        video.muted = true;
       }
     });
     this.currentlyPlaying = null;
@@ -164,6 +147,7 @@ export const useVideoVisibility = (options = {}) => {
 
     const handleIntersection = (entries) => {
       entries.forEach((entry) => {
+        // Update visibility state in global controller
         globalController.updateVisibility(video, entry.isIntersecting);
       });
     };
@@ -174,32 +158,36 @@ export const useVideoVisibility = (options = {}) => {
     );
     observerRef.current.observe(video);
 
+    // IMPORTANT: Check initial visibility after a short delay
+    // This ensures videos autoplay on page load
     const initialCheckTimer = setTimeout(() => {
       const rect = video.getBoundingClientRect();
       const viewportHeight =
         window.innerHeight || document.documentElement.clientHeight;
 
+      // Check if video is in viewport
       const isVisible =
         (rect.top >= 0 &&
           rect.left >= 0 &&
           rect.bottom <= viewportHeight &&
           rect.right <=
             (window.innerWidth || document.documentElement.clientWidth)) ||
-        ((viewportHeight - rect.top) / rect.height >= threshold &&
-          rect.top < viewportHeight &&
-          rect.bottom > 0);
+        // Also check if threshold amount is visible
+        (rect.top < viewportHeight &&
+          rect.bottom > 0 &&
+          (viewportHeight - rect.top) / rect.height >= threshold);
 
       if (isVisible) {
         globalController.updateVisibility(video, true);
       }
     }, 100);
 
+    // Listen to play events to ensure coordination
     const handlePlay = () => {
+      // When user manually plays a video, update the controller
       const data = globalController.videos.get(video);
       if (data) {
         data.isVisible = true;
-        // When user plays manually, we should also ensure it is unmuted
-        video.muted = false;
         globalController.updatePlayback();
       }
     };
@@ -219,9 +207,13 @@ export const useVideoVisibility = (options = {}) => {
   return videoRef;
 };
 
+// Hook for modals to notify global controller
 export const useModalVideoController = (isOpen) => {
   useEffect(() => {
     globalController.setModalOpen(isOpen);
+
+    // When modal opens, trigger an immediate playback update
+    // This ensures modal videos start playing right away
     if (isOpen) {
       setTimeout(() => {
         globalController.updatePlayback();

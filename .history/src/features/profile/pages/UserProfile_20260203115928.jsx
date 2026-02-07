@@ -166,8 +166,6 @@ export default function UserProfilePage() {
             ? likedUsers.some((u) => String(resolveUserId(u)) === String(meId))
             : false;
 
-          console.log("post===>", post);
-
           return {
             ...post,
             id: post._id,

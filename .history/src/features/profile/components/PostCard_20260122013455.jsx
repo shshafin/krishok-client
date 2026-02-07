@@ -52,13 +52,13 @@ export default function PostCard({
       const rawVideos = Array.isArray(post.videos)
         ? post.videos
         : post.video
-          ? [post.video]
-          : [];
+        ? [post.video]
+        : [];
       const rawImages = Array.isArray(post.images)
         ? post.images
         : post.image
-          ? [post.image]
-          : [];
+        ? [post.image]
+        : [];
 
       rawVideos.forEach((v) => {
         const src = typeof v === "object" ? v.src || v.url : v;
@@ -92,7 +92,7 @@ export default function PostCard({
   }, [post]);
 
   const showDeleteButton = Boolean(
-    isOwner && location?.pathname?.startsWith("/me"),
+    isOwner && location?.pathname?.startsWith("/me")
   );
 
   const submitComment = () => {
@@ -156,7 +156,7 @@ export default function PostCard({
           <div
             className={`post-media-grid count-${Math.min(
               totalGalleryItems,
-              4,
+              4
             )}`}>
             {visibleGallery.map((item, index) => {
               const isOverflowItem = extraImageCount > 0 && index === 3;

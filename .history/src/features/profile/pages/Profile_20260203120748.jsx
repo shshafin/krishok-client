@@ -160,7 +160,7 @@ export default function ProfilePage() {
             id: post._id,
             author: {
               id: post.user?._id || post.userId,
-              name: post.user?.name || post.user?.username || "Unknown",
+              name: post.user?.name || post.user?.uaname || "Unknown",
               state: post.user?.state || "Unknown",
               avatar: post.user?.profileImage
                 ? `${baseApi}${post.user.profileImage}`

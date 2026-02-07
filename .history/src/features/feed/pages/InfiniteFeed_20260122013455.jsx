@@ -37,7 +37,7 @@ const sameId = (left, right) => {
 // --- FIX: UPDATED ADAPT USER TO PRIORITIZE NAME/FULLNAME ---
 const adaptUser = (
   user,
-  fallbackName = "\u0985\u099C\u09BE\u09A8\u09BE \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0\u0995\u09BE\u09B0\u09C0",
+  fallbackName = "\u0985\u099C\u09BE\u09A8\u09BE \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0\u0995\u09BE\u09B0\u09C0"
 ) => {
   if (!user || typeof user !== "object") {
     return {
@@ -76,7 +76,7 @@ const adaptFeedPost = (rawPost, viewerId) => {
     resolveId(rawPost) ?? rawPost?._id ?? rawPost?.id ?? `post-${Date.now()}`;
   const author = adaptUser(
     rawPost?.user ?? rawPost?.author ?? {},
-    "\u0985\u09A8\u09BE\u09AE\u09BE \u09B2\u09C7\u0996\u0995",
+    "\u0985\u09A8\u09BE\u09AE\u09BE \u09B2\u09C7\u0996\u0995"
   );
   const getSrc = (item) => {
     if (!item) return null;
@@ -125,8 +125,8 @@ const adaptFeedPost = (rawPost, viewerId) => {
       typeof entry === "object"
         ? entry
         : { id: entry, username: String(entry) },
-      `লাইককারী ${toBanglaDigits(index + 1)}`,
-    ),
+      `লাইককারী ${toBanglaDigits(index + 1)}`
+    )
   );
   const liked = viewerId
     ? likedUsers.some((user) => {
@@ -139,7 +139,7 @@ const adaptFeedPost = (rawPost, viewerId) => {
     ? rawPost.comments.map((comment, index) => {
         const authorInfo = adaptUser(
           comment?.user ?? comment?.author ?? {},
-          `মন্তব্যকারী ${toBanglaDigits(index + 1)}`,
+          `মন্তব্যকারী ${toBanglaDigits(index + 1)}`
         );
         return {
           id: comment._id.toString(),
@@ -190,12 +190,12 @@ export default function InfiniteFeed() {
   const currentUserId = useMemo(() => resolveId(currentUser), [currentUser]);
   const viewerIdentity = useMemo(
     () => adaptUser(currentUser ?? {}, "আপনি"),
-    [currentUser],
+    [currentUser]
   );
   console.log("current User :--->", currentUser);
   const getChunkSize = useCallback(
     (pageNumber) => (pageNumber === 1 ? 30 : 10),
-    [],
+    []
   );
 
   const getSliceWindow = useCallback((pageNumber) => {
@@ -217,7 +217,7 @@ export default function InfiniteFeed() {
         return;
       }
       const mapped = nextChunk.map((item) =>
-        adaptFeedPost(item, currentUserId ?? null),
+        adaptFeedPost(item, currentUserId ?? null)
       );
       setPosts((prev) => {
         const map = new Map();
@@ -247,7 +247,7 @@ export default function InfiniteFeed() {
         if (entries[0].isIntersecting && hasMore && !isLoadingPosts)
           setPage((prev) => prev + 1);
       },
-      { threshold: 0.1, rootMargin: "200px" },
+      { threshold: 0.1, rootMargin: "200px" }
     );
     const current = loaderRef.current;
     if (current) observer.observe(current);
@@ -280,7 +280,7 @@ export default function InfiniteFeed() {
         if (!post?.raw) return post;
         const remapped = adaptFeedPost(post.raw, currentUserId);
         return { ...remapped, raw: post.raw };
-      }),
+      })
     );
   }, [currentUserId]);
 
@@ -358,9 +358,7 @@ export default function InfiniteFeed() {
           previousState = {
             liked: post.liked,
             likes: post.likes,
-            likedUsers: Array.isArray(post.likedUsers)
-              ? [...post.likedUsers]
-              : [],
+            likedUsers: Array.isArray(post.likedUsers) ? [...post.likedUsers] : [],
             raw: post.raw,
           };
           const viewerKey = viewerIdentity?.id
@@ -395,21 +393,18 @@ export default function InfiniteFeed() {
               ? (post.likes ?? 0) + 1
               : Math.max((post.likes ?? 1) - 1, 0);
           }
-          const updatedRaw =
-            post.raw && viewerKey
-              ? {
-                  ...post.raw,
-                  likes: liked
-                    ? [...(post.raw.likes ?? []), viewerIdentity]
-                    : (post.raw.likes ?? []).filter((entry) => {
-                        const identifier =
-                          resolveId(entry) ?? entry?.username ?? entry;
-                        return identifier
-                          ? !sameId(identifier, viewerKey)
-                          : true;
-                      }),
-                }
-              : post.raw;
+          const updatedRaw = post.raw && viewerKey
+            ? {
+                ...post.raw,
+                likes: liked
+                  ? [...(post.raw.likes ?? []), viewerIdentity]
+                  : (post.raw.likes ?? []).filter((entry) => {
+                      const identifier =
+                        resolveId(entry) ?? entry?.username ?? entry;
+                      return identifier ? !sameId(identifier, viewerKey) : true;
+                    }),
+              }
+            : post.raw;
           return {
             ...post,
             liked,
@@ -417,7 +412,7 @@ export default function InfiniteFeed() {
             likedUsers: updatedLikedUsers,
             raw: updatedRaw,
           };
-        }),
+        })
       );
       try {
         await likePost(postId);
@@ -427,13 +422,15 @@ export default function InfiniteFeed() {
         if (previousState) {
           setPosts((prev) =>
             prev.map((post) =>
-              sameId(post.id, postId) ? { ...post, ...previousState } : post,
-            ),
+              sameId(post.id, postId)
+                ? { ...post, ...previousState }
+                : post
+            )
           );
         }
       }
     },
-    [viewerIdentity],
+    [viewerIdentity]
   );
 
   // --- FULL LOGIC RESTORED FOR COMMENTS ---
@@ -456,7 +453,7 @@ export default function InfiniteFeed() {
         const finalId = realId ?? `comment-${Date.now()}`;
         const normalizedAuthor = adaptUser(
           actualCommentData?.user ?? currentUser ?? {},
-          "আপনি",
+          "আপনি"
         );
         const newComment = {
           id: finalId,
@@ -482,7 +479,7 @@ export default function InfiniteFeed() {
               comments: [...post.comments, newComment],
               raw: updatedRaw,
             };
-          }),
+          })
         );
         toast.success("মন্তব্য যোগ হয়েছে");
       } catch (error) {
@@ -490,7 +487,7 @@ export default function InfiniteFeed() {
         toast.error("মন্তব্য যোগ করা যায়নি");
       }
     },
-    [currentUser],
+    [currentUser]
   );
 
   // --- FULL LOGIC RESTORED FOR DELETE COMMENT ---
@@ -503,18 +500,18 @@ export default function InfiniteFeed() {
         prev.map((post) => {
           if (!sameId(post.id, postId)) return post;
           const filtered = post.comments.filter(
-            (c) => c._id !== commentId && c.id !== commentId,
+            (c) => c._id !== commentId && c.id !== commentId
           );
           const updatedRaw = post.raw
             ? {
                 ...post.raw,
                 comments: (post.raw.comments ?? []).filter(
-                  (c) => c._id !== commentId,
+                  (c) => c._id !== commentId
                 ),
               }
             : post.raw;
           return { ...post, comments: filtered, raw: updatedRaw };
-        }),
+        })
       );
       toast.success("মন্তব্য মুছে ফেলা হয়েছে");
     } catch (error) {
@@ -540,7 +537,7 @@ export default function InfiniteFeed() {
       }
       toast.success("পোস্ট মুছে ফেলা হয়েছে");
     },
-    [activePostId, searchParams, navigate, location.pathname],
+    [activePostId, searchParams, navigate, location.pathname]
   );
 
   const openCommentsModal = useCallback((postId, index = 0) => {
@@ -556,7 +553,7 @@ export default function InfiniteFeed() {
 
   const activePost = useMemo(
     () => posts.find((post) => sameId(post.id, activePostId)) ?? null,
-    [posts, activePostId],
+    [posts, activePostId]
   );
 
   const canDeleteComment = useCallback(
@@ -566,7 +563,7 @@ export default function InfiniteFeed() {
         ? sameId(commentAuthorId, currentUserId)
         : false;
     },
-    [currentUserId],
+    [currentUserId]
   );
 
   return (
